@@ -8,26 +8,18 @@ const {
   updatePost,
   deletePost,
 } = require('../controllers/postController');
-// const { protect } = require('../middleware/authMiddleware'); // Will be added later
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
 // Public routes
 router.route('/')
   .get(getPosts)
-  // .post(protect, createPost); // Use 'protect' middleware after Auth is set up
-
-// Temporarily allow POST without protect for initial testing
-router.route('/').post(createPost); 
+  .post(protect, authorize('admin', 'author'), createPost); // PROTECTED
 
 router.route('/:id')
   .get(getPost)
-  // .put(protect, updatePost)
-  // .delete(protect, deletePost);
-
-// Temporarily allow PUT/DELETE without protect for initial testing
-router.route('/:id')
-  .put(updatePost)
-  .delete(deletePost);
+  .put(protect, authorize('admin', 'author'), updatePost) // PROTECTED
+  .delete(protect, authorize('admin', 'author'), deletePost); // PROTECTED
 
 module.exports = router;
