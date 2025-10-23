@@ -3,32 +3,37 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-// Import Layout and Page components (to be created)
-// import Layout from './components/layout/Layout';
-// import HomePage from './pages/HomePage';
-// import PostDetails from './pages/PostDetails';
-// import CreatePostPage from './pages/CreatePostPage';
-// import LoginPage from './pages/LoginPage';
-// import RegisterPage from './pages/RegisterPage';
-
-// Placeholder components for initial structure
+// Import Layout (still using placeholder for simplicity) and Page components
+// You should create a proper Layout component in components/layout/
 const Layout = ({ children }) => (
-  <div>
-    <header style={{ padding: '10px', borderBottom: '1px solid #ccc' }}>
-      <h1>MERN Blog</h1>
+  <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <header style={{ padding: '10px 20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <h1 style={{ margin: 0 }}><a href="/" style={{ textDecoration: 'none', color: '#333' }}>MERN Blog</a></h1>
       <nav>
-        <a href="/">Home</a> | <a href="/create">Create Post</a> | <a href="/login">Login</a>
+        <a href="/" style={{ margin: '0 10px' }}>Home</a>
+        <a href="/create" style={{ margin: '0 10px' }}>Create Post</a>
+        <a href="/login" style={{ margin: '0 10px' }}>Login</a>
       </nav>
     </header>
     <main style={{ padding: '20px' }}>{children}</main>
   </div>
 );
-const HomePage = () => <h2>Home Page (Post List)</h2>;
-const PostDetails = () => <h2>Post Details Page</h2>;
-const CreatePostPage = () => <h2>Create/Edit Post Page</h2>;
-const LoginPage = () => <h2>Login</h2>;
-const RegisterPage = () => <h2>Register</h2>;
 
+
+// ----------------------------------------------------------------------
+// Import Real Components:
+
+import HomePage from './pages/HomePage'; 
+// import PostDetails from './pages/PostDetails';
+// import CreatePostPage from './pages/CreatePostPage';
+// import LoginPage from './pages/LoginPage';
+// import RegisterPage from './pages/RegisterPage';
+
+// Placeholder components for pages we haven't built yet
+const PostDetails = () => <h2>Post Details Page (In Progress)</h2>;
+const CreatePostPage = () => <h2>Create/Edit Post Page (In Progress)</h2>;
+const LoginPage = () => <h2>Login (In Progress)</h2>;
+const RegisterPage = () => <h2>Register (In Progress)</h2>;
 
 function App() {
   return (
