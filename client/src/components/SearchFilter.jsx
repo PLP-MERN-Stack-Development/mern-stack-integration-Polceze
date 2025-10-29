@@ -14,7 +14,6 @@ const SearchFilter = ({ onFilterChange, categories }) => {
     const handleCategoryChange = (e) => {
         const categoryId = e.target.value;
         setSelectedCategory(categoryId);
-        // Automatically apply filter on category change
         onFilterChange({ search: searchTerm, category: categoryId });
     };
     
@@ -33,7 +32,8 @@ const SearchFilter = ({ onFilterChange, categories }) => {
 
             <select value={selectedCategory} onChange={handleCategoryChange} style={selectStyle}>
                 <option value="">-- All Categories --</option>
-                {categories && categories.map(cat => (
+                {/* FIX: Check if categories exists and is an array */}
+                {categories && Array.isArray(categories) && categories.map(cat => (
                     <option key={cat._id} value={cat._id}>{cat.name}</option>
                 ))}
             </select>

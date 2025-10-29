@@ -2,20 +2,22 @@
 
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { postService } from '../services/api';
 import useFetch from '../hooks/useFetch';
 
 const PostDetails = () => {
   // Get the slug from the URL parameters
   const { slug } = useParams();
+  const { isAuthenticated } = useAuth(); // Removed unused 'user' variable
 
   // Fetch the single post using the slug
-  const { data: post, loading, error } = useFetch(
+  const { data: post, loading, error, setData: setPost } = useFetch( // Added setData as setPost
     () => postService.getPost(slug),
     [slug]
   );
   
-  // State for the new comment form (Task 5 feature)
+  // State for the new comment form
   const [newComment, setNewComment] = useState('');
 
   if (loading) {
@@ -31,11 +33,29 @@ const PostDetails = () => {
   }
 
   // Helper function to handle comment submission 
-  const handleCommentSubmit = (e) => {
-    e.preventDefault();
-    console.log(`Submitting comment: ${newComment} for post ${post._id}`);
-    // Post the comment using postService.addComment
-    setNewComment('');
+  const handleCommentSubmit = async (e) => {
+      e.preventDefault();
+
+      if (!isAuthenticated) {
+          alert('You must be logged in to comment.');
+          return;
+      }
+
+      try {
+          // post._id is available because the post was fetched successfully
+          const response = await postService.addComment(post._id, { content: newComment });
+
+          // OPTIMISTIC UI UPDATE: Manually update the post state with the new comment
+          setPost(prevPost => ({
+              ...prevPost,
+              comments: [...prevPost.comments, response.data]
+          }));
+
+          setNewComment('');
+          alert('Comment posted!');
+      } catch (error) {
+          alert(`Failed to post comment: ${error.response?.data?.error || 'Server error'}`);
+      }
   };
 
   const imageUrl = post.featuredImage.startsWith('http') 
@@ -66,17 +86,23 @@ const PostDetails = () => {
         <h3>Comments ({post.comments.length})</h3>
         
         {/* Comment Form */}
-        <form onSubmit={handleCommentSubmit} style={commentFormStyle}>
-          <textarea
-            placeholder="Write a comment..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            required
-            rows="4"
-            style={textareaStyle}
-          />
-          <button type="submit" style={submitButtonStyle}>Post Comment</button>
-        </form>
+        {isAuthenticated ? (
+            <form onSubmit={handleCommentSubmit} style={commentFormStyle}>
+                <textarea
+                    placeholder="Write a comment..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    required
+                    rows="4"
+                    style={textareaStyle}
+                />
+                <button type="submit" style={submitButtonStyle}>Post Comment</button>
+            </form>
+        ) : (
+            <p style={{ textAlign: 'center', padding: '15px', border: '1px solid #ddd' }}>
+                <Link to="/login">Log in</Link> to leave a comment.
+            </p>
+        )}
 
         {/* List Comments */}
         {post.comments.length > 0 ? (

@@ -1,3 +1,4 @@
+// server/routes/categories.js
 const express = require('express');
 const {
   getCategories,
@@ -9,9 +10,6 @@ const router = express.Router();
 
 router.route('/')
   .get(getCategories)
-  // .post(protect, authorize('admin', 'editor'), createCategory); 
-
-// Temporarily allow POST without protect for initial testing
-router.route('/').post(createCategory);
+  .post(createCategory); // Temporarily remove auth for testing
 
 module.exports = router;

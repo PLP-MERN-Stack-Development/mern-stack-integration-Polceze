@@ -67,16 +67,23 @@ const PostSchema = new mongoose.Schema(
 );
 
 // Create slug from title before saving
-PostSchema.pre('save', function (next) {
-  if (!this.isModified('title')) {
-    return next();
+PostSchema.pre('save', function (next) {  
+  // Generate slug for new documents OR when title is modified
+  if (this.isNew || this.isModified('title')) {
+    const baseSlug = this.title
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '')  // Remove special characters
+      .replace(/\s+/g, '-')     // Replace spaces with hyphens
+      .replace(/-+/g, '-')      // Replace multiple hyphens with single hyphen
+      .trim();
+    
+    // Add timestamp to ensure uniqueness
+    this.slug = `${baseSlug}-${Date.now()}`;
+    console.log('Generated slug:', this.slug);
+  } else {
+    console.log('Skipping slug generation');
   }
   
-  this.slug = this.title
-    .toLowerCase()
-    .replace(/[^\w ]+/g, '')
-    .replace(/ +/g, '-');
-    
   next();
 });
 

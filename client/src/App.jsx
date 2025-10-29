@@ -24,16 +24,16 @@ const Layout = ({ children }) => (
 // Import Real Components:
 
 import HomePage from './pages/HomePage'; 
-// import PostDetails from './pages/PostDetails';
-// import CreatePostPage from './pages/CreatePostPage';
-// import LoginPage from './pages/LoginPage';
-// import RegisterPage from './pages/RegisterPage';
+import PostDetails from './pages/PostDetails';
+import CreatePostPage from './pages/CreatePostPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 
 // Placeholder components for pages we haven't built yet
-const PostDetails = () => <h2>Post Details Page (In Progress)</h2>;
-const CreatePostPage = () => <h2>Create/Edit Post Page (In Progress)</h2>;
-const LoginPage = () => <h2>Login (In Progress)</h2>;
-const RegisterPage = () => <h2>Register (In Progress)</h2>;
+// const PostDetails = () => <h2>Post Details Page (In Progress)</h2>;
+// const CreatePostPage = () => <h2>Create/Edit Post Page (In Progress)</h2>;
+// const LoginPage = () => <h2>Login (In Progress)</h2>;
+// const RegisterPage = () => <h2>Register (In Progress)</h2>;
 
 function App() {
   return (

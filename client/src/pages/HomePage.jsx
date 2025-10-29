@@ -1,13 +1,10 @@
-// HomePage.jsx - Updated to handle pagination, search, and filter
-
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { postService, categoryService } from '../services/api';
 import useFetch from '../hooks/useFetch';
 import PostCard from '../components/posts/PostCard';
 import SearchFilter from '../components/SearchFilter';
 
 const HomePage = () => {
-    // State for filtering and pagination
     const [filter, setFilter] = useState({
         page: 1,
         limit: 10,
@@ -15,19 +12,45 @@ const HomePage = () => {
         search: null,
     });
     
-    // Fetch posts using the filter state
+    const fetchPostsFn = useCallback(
+        () => postService.getAllPosts(filter.page, filter.limit, filter.category, filter.search),
+        [filter.page, filter.limit, filter.category, filter.search]
+    );
+
+    // ----------------------------------------------------------------------
+    // 1. FETCH POSTS
+    // ----------------------------------------------------------------------
     const { 
         data: postsData, 
         loading: postsLoading, 
         error: postsError 
     } = useFetch(
-        () => postService.getAllPosts(filter.page, filter.limit, filter.category, filter.search),
+        fetchPostsFn,
         [filter.page, filter.limit, filter.category, filter.search]
     );
 
-    // Fetch categories for the filter dropdown
-    const { data: categories } = useFetch(() => categoryService.getAllCategories());
+    // ----------------------------------------------------------------------
+    // 2. FETCH CATEGORIES FROM DATABASE
+    // ----------------------------------------------------------------------
+    const { 
+        data: categoriesData, 
+        loading: categoriesLoading,
+        error: categoriesError 
+    } = useFetch(
+        () => categoryService.getAllCategories(),
+        [] // Empty dependency array - fetch once when component mounts
+    );
 
+    // ----------------------------------------------------------------------
+    // 3. FIX DATA ACCESS - postsData IS THE ARRAY OF POSTS
+    // ----------------------------------------------------------------------
+    const posts = Array.isArray(postsData) ? postsData : postsData?.data || [];
+    const pagination = postsData?.pagination; // This might be undefined
+
+    // ----------------------------------------------------------------------
+    // 4. HANDLERS
+    // ----------------------------------------------------------------------
+    
     const handleFilterChange = (newFilters) => {
         setFilter(prev => ({ 
             ...prev, 
@@ -40,22 +63,29 @@ const HomePage = () => {
         setFilter(prev => ({ ...prev, page: newPage }));
     };
     
+    // ----------------------------------------------------------------------
+    // 5. RENDERING
+    // ----------------------------------------------------------------------
+
     if (postsLoading && filter.page === 1) {
         return <div style={{ textAlign: 'center' }}>Loading initial posts...</div>;
     }
-
-    // Extract posts and pagination info
-    const posts = postsData?.data || [];
-    const pagination = postsData?.pagination;
     
     return (
         <div className="home-page">
             <h2>Latest Blog Posts</h2>
-            
+                     
             <SearchFilter 
                 onFilterChange={handleFilterChange} 
-                categories={categories} 
+                categories={categoriesData || []} 
+                loading={categoriesLoading}
             />
+
+            {categoriesError && (
+                <div style={{ color: 'orange', textAlign: 'center', margin: '10px 0' }}>
+                    Note: Categories not available - {categoriesError}
+                </div>
+            )}
 
             {postsError && <div style={{ color: 'red', textAlign: 'center' }}>Error: {postsError}</div>}
 
@@ -65,7 +95,6 @@ const HomePage = () => {
                 ))}
             </div>
 
-            {/* Pagination Component */}
             {pagination && pagination.totalPages > 1 && (
                 <div style={paginationStyle}>
                     <button 
@@ -86,12 +115,30 @@ const HomePage = () => {
                 </div>
             )}
             
-            {posts.length === 0 && !postsLoading && <div style={{ textAlign: 'center' }}>No posts found matching your criteria.</div>}
+            {posts.length === 0 && !postsLoading && (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                    No posts found matching your criteria.
+                </div>
+            )}
         </div>
     );
 };
 
-const paginationStyle = { display: 'flex', justifyContent: 'center', gap: '20px', margin: '30px 0' };
-const pageButtonStyle = { padding: '10px 15px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' };
+const paginationStyle = { 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    gap: '20px', 
+    margin: '30px 0' 
+};
+
+const pageButtonStyle = { 
+    padding: '10px 15px', 
+    backgroundColor: '#007bff', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '4px', 
+    cursor: 'pointer' 
+};
 
 export default HomePage;

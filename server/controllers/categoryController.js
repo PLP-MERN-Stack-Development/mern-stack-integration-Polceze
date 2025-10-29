@@ -6,9 +6,12 @@ const ErrorResponse = require('../utils/errorResponse');
 // @access  Public
 exports.getCategories = async (req, res, next) => {
   try {
+    console.log('=== GET CATEGORIES CALLED ===');
     const categories = await Category.find().sort({ name: 1 });
+    console.log('Categories found:', categories.length);
     res.status(200).json({ success: true, count: categories.length, data: categories });
   } catch (error) {
+    console.error('=== CATEGORIES CONTROLLER ERROR ===', error);
     next(error);
   }
 };

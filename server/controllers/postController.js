@@ -8,43 +8,48 @@ const ErrorResponse = require('../utils/errorResponse');
 // @access  Public
 exports.getPosts = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, category, search } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    let query = {};
-
-    // 1. Filtering by Category (using category name/slug or ID)
-    if (category) {
-        // We assume 'category' is the Category ID for the Post model's ref
-        query.category = category; 
-    }
+    console.log('=== GET POSTS WITH MODEL CHECK ===');
     
-    // 2. Searching
-    if (search) {
-        query.$or = [
-            // Case-insensitive search on title and content
-            { title: { $regex: search, $options: 'i' } },
-            { content: { $regex: search, $options: 'i' } },
-            { tags: { $in: [new RegExp(search, 'i')] } } // Search within tags
-        ];
+    // Check if Post model is available
+    if (!Post || typeof Post.find !== 'function') {
+      console.error('Post model is not properly initialized');
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        pagination: { page: 1, limit: 10, totalPages: 0, totalPosts: 0 },
+        data: [],
+        message: 'System initializing'
+      });
     }
 
-    const totalPosts = await Post.countDocuments(query);
-    const totalPages = Math.ceil(totalPosts / parseInt(limit));
+    console.log('Post model is available, proceeding with query...');
+    
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const posts = await Post.find(query)
+    const posts = await Post.find({})
       .populate('author', 'username') 
       .populate('category', 'name slug')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
+    const totalPosts = await Post.countDocuments({});
+
     res.status(200).json({ 
-        success: true, 
-        count: posts.length, 
-        pagination: { page: parseInt(page), limit: parseInt(limit), totalPages, totalPosts },
-        data: posts 
+      success: true, 
+      count: posts.length, 
+      pagination: { 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        totalPages: Math.ceil(totalPosts / parseInt(limit)), 
+        totalPosts 
+      },
+      data: posts 
     });
+    
   } catch (error) {
+    console.error('=== POSTS CONTROLLER ERROR ===', error);
     next(error);
   }
 };
@@ -56,10 +61,24 @@ exports.getPost = async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    // Find by ID or by slug
-    const post = await Post.findOne({ $or: [{ _id: id }, { slug: id }] })
-      .populate('author', 'username')
-      .populate('category', 'name slug');
+    console.log('=== GET POST CALLED ===');
+    console.log('Requested ID/slug:', id);
+    
+    // Check if it's a valid ObjectId (24 character hex string)
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+    
+    let post;
+    if (isObjectId) {
+      // If it's a valid ObjectId, search by _id
+      post = await Post.findOne({ _id: id })
+        .populate('author', 'username')
+        .populate('category', 'name slug');
+    } else {
+      // If it's not a valid ObjectId, search by slug
+      post = await Post.findOne({ slug: id })
+        .populate('author', 'username')
+        .populate('category', 'name slug');
+    }
 
     if (!post) {
       return next(new ErrorResponse(`Post not found with id/slug of ${id}`, 404));
@@ -68,8 +87,10 @@ exports.getPost = async (req, res, next) => {
     // Increment view count (Method from Post.js)
     await post.incrementViewCount();
     
+    console.log('Post found:', post.title);
     res.status(200).json({ success: true, data: post });
   } catch (error) {
+    console.error('=== GET POST ERROR ===', error);
     next(error);
   }
 };
@@ -77,20 +98,85 @@ exports.getPost = async (req, res, next) => {
 // @desc    Create new post
 // @route   POST /api/posts
 // @access  Private (Requires authentication and authorization)
-exports.createPost = async (req, res, next) => {
-  // Note: Assuming you'll add authentication middleware to get req.user
+exports.createPost = async (req, res) => {
   try {
-    if (req.file) {
-        // Save the path to the database field
-        req.body.featuredImage = req.file.filename; 
+    console.log('=== CREATE POST STARTED ===');
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
+    console.log('Request user:', req.user);
+
+    // Check if user is authenticated
+    if (!req.user || !req.user.id) {
+      console.log('ERROR: No user found in request');
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated'
+      });
     }
 
-    req.body.author = req.user._id; 
+    const { title, content, category, excerpt, tags } = req.body;
     
-    const post = await Post.create(req.body);
-    res.status(201).json({ success: true, data: post });
+    console.log('Extracted fields:', {
+      title,
+      content: content ? `Length: ${content.length} chars` : 'Missing',
+      category,
+      excerpt,
+      tags
+    });
+
+    // MANUAL SLUG GENERATION
+    const generateSlug = (title) => {
+      return title
+        .toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim() + '-' + Date.now();
+    };
+
+    // Prepare post data WITH SLUG
+    const postData = {
+      title,
+      content,
+      category,
+      excerpt,
+      author: req.user.id,
+      tags: Array.isArray(tags) ? tags : (tags || '').split(',').map(tag => tag.trim()).filter(tag => tag),
+      featuredImage: req.file ? req.file.filename : 'default-post.jpg',
+      slug: generateSlug(title) // MANUALLY SET SLUG
+    };
+
+    console.log('Post data before creation:', postData);
+
+    // Create the post using new Post() instead of Post.create()
+    console.log('Attempting to create post in database...');
+    const post = new Post(postData);
+    await post.save();
+    
+    console.log('=== POST CREATED SUCCESSFULLY ===');
+    console.log('Post ID:', post._id);
+    console.log('Post slug:', post.slug);
+    
+    res.status(201).json({
+      success: true,
+      data: post
+    });
+
   } catch (error) {
-    next(error);
+    console.error('=== ERROR CREATING POST ===');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
+    // If it's a validation error, log the specific fields
+    if (error.name === 'ValidationError') {
+      console.error('Validation errors:', error.errors);
+    }
+    
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
   }
 };
 

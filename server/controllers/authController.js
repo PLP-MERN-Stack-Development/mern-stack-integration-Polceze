@@ -30,7 +30,7 @@ exports.register = async (req, res) => {
       username,
       email,
       password,
-      role,
+      role: 'author',
     });
 
     sendTokenResponse(user, 201, res);
