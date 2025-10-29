@@ -115,31 +115,32 @@ npm run seed
 
 ### Authentication Endpoints
 
-Method	Endpoint	Description	Body
-POST	/api/auth/register	User registration	{ username, email, password }
-POST	/api/auth/login	User login	{ email, password }
+| Method | Endpoint | Description | Body |
+|--------|----------|-------------|------|
+| POST | `/api/auth/register` | User registration | `{ username, email, password }` |
+| POST | `/api/auth/login` | User login | `{ email, password }` |
 
 ### Post Endpoints
 
-Method	Endpoint	Description	Parameters
-GET	/api/posts	Get all posts	?page=1&limit=10
-GET	/api/posts/:id	Get single post	-
-POST	/api/posts	Create new post	FormData
-PUT	/api/posts/:id	Update post	FormData
-DELETE	/api/posts/:id	Delete post	-
+| Method | Endpoint | Description | Parameters |
+|--------|----------|-------------|------------|
+| GET | `/api/posts` | Get all posts | `?page=1&limit=10` |
+| GET | `/api/posts/:id` | Get single post | - |
+| POST | `/api/posts` | Create new post | FormData |
+| PUT | `/api/posts/:id` | Update post | FormData |
+| DELETE | `/api/posts/:id` | Delete post | - |
 
 ### Category Endpoints
 
-
-Method	Endpoint	Description
-GET	/api/categories	Get all categories
-POST	/api/categories	Create category
-GET	/api/categories/:id	Get category with posts
-
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/categories` | Get all categories |
+| POST | `/api/categories` | Create category |
+| GET | `/api/categories/:id` | Get category with posts |
 ### Request/Response Examples
 
 #### Create Post:
-```http
+```text
 POST /api/posts
 Content-Type: multipart/form-data
 
